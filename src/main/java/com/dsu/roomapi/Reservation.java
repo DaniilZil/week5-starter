@@ -3,7 +3,7 @@ package com.dsu.roomapi;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
-
+@Entity
 public class Reservation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
