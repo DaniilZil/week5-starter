@@ -1,0 +1,58 @@
+### 1. List all rooms (expect 200, 3 rooms)
+GET http://localhost:8080/api/rooms
+
+### 2. Filter by capacity (expect 2 rooms)
+GET http://localhost:8080/api/rooms?minCapacity=6
+
+### 3. Filter by keyword (expect 1 room)
+GET http://localhost:8080/api/rooms?keyword=pod
+
+### 4. Both filters (expect 1 room)
+GET http://localhost:8080/api/rooms?minCapacity=6&keyword=roof
+
+### 5. One room (expect 200)
+GET http://localhost:8080/api/rooms/2
+
+### 6. Missing room (expect 404)
+GET http://localhost:8080/api/rooms/99
+
+### 7. Create (expect 201 + Location: /api/rooms/4)
+POST http://localhost:8080/api/rooms
+Content-Type: application/json
+
+{ "name": "Rooftop", "capacity": 12 }
+
+### 8. Replace (expect 200)
+PUT http://localhost:8080/api/rooms/4
+Content-Type: application/json
+
+{ "name": "Roof", "capacity": 10 }
+
+### 9. Replace missing room (expect 404)
+PUT http://localhost:8080/api/rooms/99
+Content-Type: application/json
+
+{ "name": "Ghost", "capacity": 5 }
+
+### 10. Delete (expect 204)
+DELETE http://localhost:8080/api/rooms/4
+
+### 11. Delete again (expect 404)
+DELETE http://localhost:8080/api/rooms/4
+
+### ---------- Week 4 additions ----------
+
+### 12. Capacity 0 is rejected by the service (expect 400)
+POST http://localhost:8080/api/rooms
+Content-Type: application/json
+
+{ "name": "Closet", "capacity": 0 }
+
+### 13. Capacity 50 is rejected (expect 400)
+PUT http://localhost:8080/api/rooms/1
+Content-Type: application/json
+
+{ "name": "Seminar A", "capacity": 50 }
+
+### 14. Stats: another controller sees the same data (expect {"rooms": 3})
+GET http://localhost:8080/api/stats
