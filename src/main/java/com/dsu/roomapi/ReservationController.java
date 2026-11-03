@@ -33,4 +33,16 @@ public class ReservationController {
     public List<ReservationResponse> search(@RequestParam String reservedBy){
         return  reservationService.findByReservedBy(reservedBy).stream().map(ReservationResponse::from).toList();
     }
+
+    @GetMapping("/reservations/{id}")
+    public ResponseEntity<ReservationResponse> findOne(@PathVariable Long id)
+    {
+        return reservationService.findById(id).map(r -> ResponseEntity.ok(ReservationResponse.from(r))).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/reservations/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id)
+    {
+        return reservationService.delete(id)? ResponseEntity.noContent().build(): ResponseEntity.notFound().build();
+    }
 }

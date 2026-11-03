@@ -1,5 +1,6 @@
 package com.dsu.roomapi;
 
+import io.micrometer.observation.ObservationFilter;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -47,7 +48,18 @@ public class ReservationService {
     }
 
 
+    public boolean delete(Long id) {
+        if (!reservationRepository.existsById(id))
+        {
+            return false;
+        }
+        reservationRepository.deleteById(id);
+        return true;
+    }
 
+    public Optional<Reservation> findById(Long id) {
 
+            return reservationRepository.findById(id);
 
+    }
 }

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class RoomService {
@@ -31,11 +32,12 @@ public class RoomService {
         checkCapacity(capacity);
         return roomRepository.save(new Room(null, name, capacity));
     }
-
-    public Optional<Room> replace(Long id, String name, int capacity) {
+    @Transactional
+    public Room update(Long id, String name, int capacity) {
         checkCapacity(capacity);
-        return roomRepository.findById(id)
-                .map(existing -> roomRepository.save(new Room(id, name, capacity)));
+        Room room = roomRepository.findById(id).orElseThrow();
+        room.update(name,capacity);
+        return room;
     }
 
     public boolean delete(Long id) {

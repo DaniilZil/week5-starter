@@ -2,7 +2,9 @@ package com.dsu.roomapi;
 
 import java.net.URI;
 import java.util.List;
+import java.util.NoSuchElementException;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,9 +27,9 @@ public class RoomController {
     }
 
     @GetMapping
-    public List<Room> list(@RequestParam(required = false) Integer minCapacity,
+    public List<RoomResponse> list(@RequestParam(required = false) Integer minCapacity,
                            @RequestParam(defaultValue = "") String keyword) {
-        return roomService.search(minCapacity, keyword);
+        return roomService.search(minCapacity, keyword).stream().map(RoomResponse::from).toList();
     }
 
     @GetMapping("/{id}")
@@ -38,26 +40,27 @@ public class RoomController {
     }
 
     @PostMapping
-    public ResponseEntity<Room> create(@RequestBody RoomCreateRequest request) {
+    public ResponseEntity<RoomResponse> create(@RequestBody RoomCreateRequest request) {
         try {
             Room room = roomService.create(request.name(), request.capacity());
             return ResponseEntity
                     .created(URI.create("/api/rooms/" + room.getId()))
-                    .body(room);
+                    .body(RoomResponse.from(room));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Room> replace(@PathVariable Long id,
-                                        @RequestBody RoomCreateRequest request) {
+    public ResponseEntity<RoomResponse> replace(@PathVariable Long id,
+                                        @RequestBody @Valid RoomCreateRequest request) {
         try {
-            return roomService.replace(id, request.name(), request.capacity())
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
+            return ResponseEntity.ok(RoomResponse.from(roomService.update(id, request.name(), request.capacity())));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        }catch (NoSuchElementException e)
+        {
+            return ResponseEntity.notFound().build();
         }
     }
 
