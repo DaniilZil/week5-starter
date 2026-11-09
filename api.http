@@ -42,7 +42,7 @@ DELETE http://localhost:8080/api/rooms/4
 
 ### ---------- Week 4 additions ----------
 
-### 12. Capacity 0 is rejected by the service (expect 400)
+### 12. Capacity 0 is rejected (expect 400)
 POST http://localhost:8080/api/rooms
 Content-Type: application/json
 
@@ -98,6 +98,12 @@ GET http://localhost:8080/api/reservations?reservedBy=Mina
 
 ### 23. Delete a room that has reservations (expect 409)
 DELETE http://localhost:8080/api/rooms/1
+
+### 24. Read the reservation created in request 17 (expect 200, Kim in Seminar A)
+GET http://localhost:8080/api/reservations/6
+
+### 25. Cancel that reservation (expect 204)
+DELETE http://localhost:8080/api/reservations/6
 
 ### ---------- Week 9 in class: dirty checking and error bodies (rooms) ----------
 
@@ -180,3 +186,15 @@ Content-Type: application/json
 
 ### 41. Not an id (expect 400, "'id' has the wrong type")
 GET http://localhost:8080/api/rooms/abc
+
+### 42. Booker name exceeds the 50-character limit (expect 400, fieldErrors: reservedBy)
+POST http://localhost:8080/api/rooms/1/reservations
+Content-Type: application/json
+
+{ "reservedBy": "123456789012345678901234567890123456789012345678901", "startTime": "2026-11-03T09:00:00", "endTime": "2026-11-03T10:00:00" }
+
+### 43. Try a partial room update with an unsupported method (expect 405)
+PATCH http://localhost:8080/api/rooms/2
+Content-Type: application/json
+
+{ "capacity": 7 }

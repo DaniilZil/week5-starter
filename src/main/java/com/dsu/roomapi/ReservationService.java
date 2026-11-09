@@ -1,65 +1,60 @@
 package com.dsu.roomapi;
 
-import io.micrometer.observation.ObservationFilter;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@Transactional(readOnly = true)
 public class ReservationService {
     private final RoomRepository roomRepository;
     private final ReservationRepository reservationRepository;
 
-    public ReservationService(RoomRepository roomRepository, ReservationRepository reservationRepository){
+    public ReservationService(RoomRepository roomRepository, ReservationRepository reservationRepository) {
         this.reservationRepository = reservationRepository;
         this.roomRepository = roomRepository;
     }
 
-    public Optional<List<Reservation>> findByRoom(Long roomId){
-        if(!roomRepository.existsById(roomId))
-            return Optional.empty();
-        return Optional.of(reservationRepository.findByRoomIdOrderByStartTime(roomId));
-    }
-
-    private void checkRequest(String reservedBy, LocalDateTime startTime, LocalDateTime endtime)
-    {
-        if(reservedBy == null || reservedBy.isBlank())
-            throw new IllegalArgumentException("reservedBy is required");
-        if(startTime == null || endtime == null)
-            throw new IllegalArgumentException("startTime and(or) endTime are required");
-        if(startTime.isBefore(endtime))
-            throw new IllegalArgumentException("starTime must be before endTime");
-    }
-
-    public Optional<Reservation> create(Long roomId, String reservedBy, LocalDateTime startTime, LocalDateTime endtime)
-    {
-        checkRequest(reservedBy, startTime, endtime);
-        Optional<Room> room = roomRepository.findById(roomId);
-        if(room.isEmpty())
-            return Optional.empty();
-        return Optional.of(reservationRepository.save(new Reservation(room.get(), reservedBy, startTime, endtime)));
-
-    }
-
-    public List<Reservation> findByReservedBy(String name){
-        return reservationRepository.findByReservedByWithRoom(name);
-    }
-
-
-    public boolean delete(Long id) {
-        if (!reservationRepository.existsById(id))
-        {
-            return false;
+    public List<ReservationResponse> findByRoom(Long roomId) {
+        if (!roomRepository.existsById(roomId)) {
+            throw new NotFoundException("room " + roomId + " not found");
         }
-        reservationRepository.deleteById(id);
-        return true;
+        return reservationRepository.findByRoomIdOrderByStartTime(roomId).stream()
+                .map(ReservationResponse::from).toList();
     }
 
-    public Optional<Reservation> findById(Long id) {
+    @Transactional
+    public ReservationResponse create(Long roomId, String reservedBy, LocalDateTime startTime, LocalDateTime endTime) {
+        if (!startTime.isBefore(endTime)) {
+            throw new IllegalArgumentException("startTime must be before endTime");
+        }
+        Room room = roomRepository.findForUpdate(roomId)
+                .orElseThrow(() -> new NotFoundException("room " + roomId + " not found"));
+        if (reservationRepository.overlaps(roomId, startTime, endTime)) {
+            throw new ConflictException("room " + roomId + " is already booked at that time");
+        }
+        var reservation = new Reservation(room, reservedBy, startTime, endTime);
+        return ReservationResponse.from(reservationRepository.save(reservation));
+    }
 
-            return reservationRepository.findById(id);
+    public List<ReservationResponse> findByReservedBy(String name) {
+        return reservationRepository.findByReservedByWithRoom(name).stream()
+                .map(ReservationResponse::from).toList();
+    }
 
+    public ReservationResponse get(Long id) {
+        return ReservationResponse.from(findReservation(id));
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        reservationRepository.delete(findReservation(id));
+    }
+
+    private Reservation findReservation(Long id) {
+        return reservationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("reservation " + id + " not found"));
     }
 }

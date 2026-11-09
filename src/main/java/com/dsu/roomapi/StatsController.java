@@ -1,7 +1,5 @@
 package com.dsu.roomapi;
 
-import java.util.Map;
-
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -15,7 +13,9 @@ public class StatsController {
     }
 
     @GetMapping("/api/stats")
-    public Map<String, Long> stats() {
-        return Map.of("rooms", roomService.count());
+    public StatsResponse stats() {
+        return new StatsResponse(roomService.count());
     }
+
+    public record StatsResponse(long rooms) {}
 }

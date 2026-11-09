@@ -4,18 +4,18 @@ FROM room
 WHERE capacity >= 6
 ORDER BY capacity DESC;
 
---Every reservation made by Mina
+-- Every reservation made by Mina
 SELECT *
 FROM reservation
-WHERE name == 'Mina'
+WHERE reserved_by = 'Mina';
 
---Every reservation with its room's name
+-- Every reservation with its room's name
 SELECT *
 FROM reservation
 JOIN room
-ON reservation.room_id = room.id
+ON reservation.room_id = room.id;
 
---Seminar A's reservations on 6 October 2026
+-- Seminar A's reservations on 6 October 2026
 SELECT *
 FROM reservation rs
          JOIN room r

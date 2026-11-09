@@ -1,5 +1,6 @@
 package com.dsu.roomapi;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,37 +13,35 @@ import java.util.List;
 public class ReservationController {
     private final ReservationService reservationService;
 
-    public ReservationController(ReservationService reservationService){
+    public ReservationController(ReservationService reservationService) {
         this.reservationService = reservationService;
     }
 
-    public ResponseEntity<List<ReservationResponse>> listForRoom(@PathVariable Long roomId)
-    {
-        return reservationService.findByRoom(roomId).map(list -> ResponseEntity.ok(list.stream().map(ReservationResponse::from).toList())).orElseGet(()->ResponseEntity.notFound().build());
+    @GetMapping("/rooms/{roomId}/reservations")
+    public List<ReservationResponse> listForRoom(@PathVariable Long roomId) {
+        return reservationService.findByRoom(roomId);
     }
+
     @PostMapping("/rooms/{roomId}/reservations")
-    public ResponseEntity<ReservationResponse> create(@PathVariable Long roomId,@RequestBody ReservationCreateRequest request) {
-        try {
-            return reservationService.create(roomId, request.reservedBy(),request.startTime(), request.endTime()).map(r -> ResponseEntity.created(URI.create("/api/reservations/" + r.getId())).body(ReservationResponse.from(r))).orElseGet(() -> ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (ConflictException e){
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
+    public ResponseEntity<ReservationResponse> create(@PathVariable Long roomId,
+                                                      @Valid @RequestBody ReservationCreateRequest request) {
+        var reservation = reservationService.create(roomId, request.reservedBy(), request.startTime(), request.endTime());
+        return ResponseEntity.created(URI.create("/api/reservations/" + reservation.id())).body(reservation);
     }
-    public List<ReservationResponse> search(@RequestParam String reservedBy){
-        return  reservationService.findByReservedBy(reservedBy).stream().map(ReservationResponse::from).toList();
+
+    @GetMapping("/reservations")
+    public List<ReservationResponse> search(@RequestParam String reservedBy) {
+        return reservationService.findByReservedBy(reservedBy);
     }
 
     @GetMapping("/reservations/{id}")
-    public ResponseEntity<ReservationResponse> findOne(@PathVariable Long id)
-    {
-        return reservationService.findById(id).map(r -> ResponseEntity.ok(ReservationResponse.from(r))).orElseGet(() -> ResponseEntity.notFound().build());
+    public ReservationResponse findOne(@PathVariable Long id) {
+        return reservationService.get(id);
     }
 
     @DeleteMapping("/reservations/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id)
-    {
-        return reservationService.delete(id)? ResponseEntity.noContent().build(): ResponseEntity.notFound().build();
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        reservationService.delete(id);
     }
 }
