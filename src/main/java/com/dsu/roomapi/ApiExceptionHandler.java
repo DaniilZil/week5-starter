@@ -1,6 +1,9 @@
 package com.dsu.roomapi;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -50,6 +53,17 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ApiError> conflict(ConflictException e, HttpServletRequest request) {
         return respond(HttpStatus.CONFLICT, e.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiError> unauthorized(AuthenticationException e, HttpServletRequest request) {
+        String message = "login required";
+        if (e instanceof OAuth2AuthenticationException) {
+            message = "token is invalid or expired";
+        } else if (e instanceof BadCredentialsException) {
+            message = "wrong username or password";
+        }
+        return respond(HttpStatus.UNAUTHORIZED, message, request, List.of());
     }
 
     @ExceptionHandler(Exception.class)
