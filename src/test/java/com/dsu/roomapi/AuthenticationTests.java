@@ -69,8 +69,39 @@ class AuthenticationTests {
         mvc.perform(get("/api/auth/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("lee"))
-                .andExpect(jsonPath("$.authorities").isEmpty());
+                .andExpect(jsonPath("$.authorities[0]").value("ROLE_USER"));
         verifyNoInteractions(users);
+    }
+
+    @Test
+    void userTokenCannotCreateRoomsAndReceivesApiError() throws Exception {
+        Instant now = Instant.now();
+        var claims = JwtClaimsSet.builder().issuer("room-api").subject("mina")
+                .issuedAt(now).expiresAt(now.plusSeconds(1800)).claim("role", "USER").build();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(
+                JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+        mvc.perform(post("/api/rooms").header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType("application/json").content("{\"name\":\"Lab\",\"capacity\":4}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.error").value("Forbidden"))
+                .andExpect(jsonPath("$.message").value("admin role required"))
+                .andExpect(jsonPath("$.path").value("/api/rooms"))
+                .andExpect(jsonPath("$.fieldErrors").isEmpty());
+    }
+
+    @Test
+    void adminTokenContainsTheRoleAndExposesAdminAuthority() throws Exception {
+        when(users.findByUsername("admin")).thenReturn(
+                Optional.of(new AppUser("admin", encoder.encode("admin1234"), "ADMIN")));
+        String response = mvc.perform(post("/api/auth/login").contentType("application/json")
+                        .content("{\"username\":\"admin\",\"password\":\"admin1234\"}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String token = new tools.jackson.databind.ObjectMapper().readTree(response).get("accessToken").asText();
+        mvc.perform(get("/api/auth/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("admin"))
+                .andExpect(jsonPath("$.authorities[0]").value("ROLE_ADMIN"));
     }
 
     @Test

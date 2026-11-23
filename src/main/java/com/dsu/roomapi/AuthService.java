@@ -57,7 +57,11 @@ public class AuthService {
         }
         var authentication = authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(username, password));
-        String role = authentication.getAuthorities().iterator().next().getAuthority().substring("ROLE_".length());
+        String role = authentication.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .filter(authority -> authority.startsWith("ROLE_"))
+                .map(authority -> authority.substring("ROLE_".length()))
+                .findFirst().orElseThrow(() -> new IllegalStateException("account has no role"));
         Instant now = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("room-api").subject(authentication.getName())

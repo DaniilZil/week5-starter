@@ -1,8 +1,8 @@
 package com.dsu.roomapi;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
+
 @Entity
 public class Reservation {
     @Id
@@ -11,56 +11,33 @@ public class Reservation {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "room_id")
     private Room room;
-    private String reservedBy;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "owner_id")
+    private AppUser owner;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    protected Reservation(){}
-    public Reservation(Room room, String reservedBy, LocalDateTime startTime, LocalDateTime endTime)
-    {
+    protected Reservation() {}
+
+    public Reservation(Room room, AppUser owner, LocalDateTime startTime, LocalDateTime endTime) {
         this.room = room;
-        this.reservedBy = reservedBy;
+        this.owner = owner;
         this.startTime = startTime;
         this.endTime = endTime;
     }
 
-    public LocalDateTime getEndTime() {
-        return endTime;
+    public boolean isOwnedBy(String username) {
+        return owner.getUsername().equals(username);
     }
 
-    public void setEndTime(LocalDateTime endTime) {
+    public void reschedule(LocalDateTime startTime, LocalDateTime endTime) {
+        this.startTime = startTime;
         this.endTime = endTime;
     }
 
-    public LocalDateTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public String getReservedBy() {
-        return reservedBy;
-    }
-
-    public void setReservedBy(String reservedBy) {
-        this.reservedBy = reservedBy;
-    }
-
-    public Room getRoom() {
-        return room;
-    }
-
-    public void setRoom(Room room) {
-        this.room = room;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getId() { return id; }
+    public Room getRoom() { return room; }
+    public AppUser getOwner() { return owner; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
 }

@@ -1,6 +1,7 @@
 package com.dsu.roomapi;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -64,6 +65,16 @@ public class ApiExceptionHandler {
             message = "wrong username or password";
         }
         return respond(HttpStatus.UNAUTHORIZED, message, request, List.of());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> forbidden(ForbiddenException e, HttpServletRequest request) {
+        return respond(HttpStatus.FORBIDDEN, e.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> accessDenied(HttpServletRequest request) {
+        return respond(HttpStatus.FORBIDDEN, "admin role required", request, List.of());
     }
 
     @ExceptionHandler(Exception.class)
