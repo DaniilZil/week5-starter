@@ -142,10 +142,14 @@ A missing login gets 401. Room changes by a USER get 403 with admin role require
 
 For rescheduling, field and time validation runs first (400), followed by lookup (404), ownership (403), and overlap checking (409). The overlap query excludes the reservation being moved. Room and reservation updates use transactional dirty checking.
 
-## Verification
+## Tests
 
-After configuring MySQL and running reset.sql, run .\gradlew.bat test on Windows or sh gradlew test on macOS/Linux. The tests cover authentication, role enforcement and owner-only changes. The HTTP sequence covers the new database relationships, booking conflicts, 401/403 bodies and CORS.
+The full suite requires Java 21 and a running MySQL 8 lab database. From the repository root, connect to `roomdb` as described under **Run** and execute `SOURCE reset.sql` before testing. This replaces the lab data. The API tests expect Mina to own reservation 1 in room 1 on October 6, 2026.
+
+Run `./gradlew test` on macOS or Linux, or `.\gradlew.bat test` on Windows. Open `build/reports/tests/test/index.html` for the results.
+
+`ReservationServiceTest` uses JUnit and Mockito and can run without MySQL using `./gradlew test --tests '*ReservationServiceTest'`. `ApiFailureTest` exercises the security filters, controllers, and services through MockMvc against MySQL. Each test transaction rolls back, including the room created by the admin success case.
 
 ## AI use
 
-OpenAI Codex helped implement and test Lab E, Lab F and Lab G, including validation, authentication, authorization and HTTP verification.
+OpenAI Codex helped implement and test Labs E–G and wrote the Assignment 8 service tests, API tests, and test instructions.
